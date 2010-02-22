@@ -1,0 +1,9 @@
+inherit gnome2
+
+
+HOMEPAGE="http://dronelabs.com/projects/"
+#SRC_URI="http://ftp.dronelabs.com/sources/${PN}/${PV_MAJ_MIN}/${P}.tar.gz"
+SRC_URI="http://git.dronelabs.com/ethos/snapshot/ETHOS_${PV//./_}.tar.bz2"
+SRC_DIR="ETHOS_${PV//./_}"
+
+CYGCONF_ARGS="--enable-introspection"

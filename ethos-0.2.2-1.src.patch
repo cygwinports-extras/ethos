@@ -1,0 +1,124 @@
+--- origsrc/ETHOS_0_2_2/bindings/python/Makefile.am	2009-11-19 16:19:49.000000000 -0600
++++ src/ETHOS_0_2_2/bindings/python/Makefile.am	2010-01-25 20:33:36.240630900 -0600
+@@ -1,4 +1,5 @@
+ INCLUDES = $(PYTHON_INCLUDES) $(PYGTK_CFLAGS)
++LIBS = $(PYTHON_LIBS)
+ 
+ defsdir = $(datadir)/pygtk/2.0/defs
+ defs_DATA = ethos.defs ethosui.defs
+@@ -10,14 +11,14 @@ pyethosdir = $(pkgpythondir)/ethos
+ pyethos_PYTHON = __init__.py ui.py
+ 
+ pkgpyexec_LTLIBRARIES = _ethos.la _ethosui.la
+-_ethos_la_CFLAGS = $(ETHOS_CFLAGS) -I$(top_srcdir)
+-_ethos_la_LDFLAGS = -module -avoid-version -export-symbols-regex init_ethos
++_ethos_la_CFLAGS = $(ETHOS_CFLAGS) -I$(top_builddir)/ethos -I$(top_srcdir)
++_ethos_la_LDFLAGS = -module -avoid-version -no-undefined -export-symbols-regex init_ethos
+ _ethos_la_LIBADD = $(ETHOS_LIBS) $(top_builddir)/ethos/libethos-1.0.la
+ _ethos_la_SOURCES = ethosmodule.c pyethosmarshal.c
+ nodist__ethos_la_SOURCES = ethos.c
+ 
+-_ethosui_la_CFLAGS = $(ETHOS_CFLAGS) $(ETHOS_UI_CFLAGS) -I$(top_srcdir)
+-_ethosui_la_LDFLAGS = -module -avoid-version -export-symbols-regex init_ethosui
++_ethosui_la_CFLAGS = $(ETHOS_CFLAGS) $(ETHOS_UI_CFLAGS) -I$(top_builddir)/ethos -I$(top_srcdir)
++_ethosui_la_LDFLAGS = -module -avoid-version -no-undefined -export-symbols-regex init_ethosui
+ _ethosui_la_LIBADD = $(ETHOS_LIBS) $(ETHOS_UI_LIBS) $(top_builddir)/ethos/libethos-1.0.la $(top_builddir)/ethos/libethos-ui-1.0.la
+ _ethosui_la_SOURCES = ethosuimodule.c pyethosmarshal.c
+ nodist__ethosui_la_SOURCES = ethosui.c
+--- origsrc/ETHOS_0_2_2/ethos/Makefile.am	2009-11-19 16:19:49.000000000 -0600
++++ src/ETHOS_0_2_2/ethos/Makefile.am	2010-01-25 19:36:29.654641400 -0600
+@@ -52,8 +52,8 @@ libethos_@ETHOS_API_VERSION@_la_CFLAGS =
+ 
+ libethos_@ETHOS_API_VERSION@_la_LDFLAGS =		\
+ 	$(ETHOS_GLIB_LT_LDFLAGS) 			\
+-	-export-dynamic 				\
+ 	-export-symbols-regex "^ethos.*" 		\
++	-no-undefined					\
+ 	-rpath $(libdir) 				\
+ 	$(NULL)
+ 
+@@ -76,11 +76,11 @@ Ethos-1.0.gir: $(G_IR_SCANNER)
+ 		--add-include-path=$(srcdir)            \
+ 		--add-include-path=.                    \
+ 		--include=Gio-2.0                       \
+-		--library=ethos-1.0                     \
++		--library=libethos-1.0.la               \
+ 		--output $@                             \
+ 		--pkg gobject-2.0                       \
+ 		-I$(top_srcdir)                         \
+-		$(sources_c)                            \
++		$(addprefix $(srcdir)/,$(sources_c))    \
+ 		$(sources_public_h)
+ 
+ girdir = $(GIRDIR)
+@@ -95,9 +95,8 @@ Ethos-1.0.typelib: Ethos-1.0.gir
+ 	$(G_IR_COMPILER)                                \
+ 	--includedir=$(srcdir)                          \
+ 	--includedir=.                                  \
+-	--shared-library=ethos-1.0                      \
+ 	$(G_IR_COMPILER_OPTS)                           \
+-	$< -o $(top_builddir)/ethos/$(@F)
++	$< -o $@
+ endif # ENABLE_INTROSPECTION
+ 
+ #
+@@ -143,14 +142,14 @@ libethos_ui_@ETHOS_API_VERSION@_la_CFLAG
+ 
+ libethos_ui_@ETHOS_API_VERSION@_la_LDFLAGS =		\
+ 	$(ETHOS_GLIB_LT_LDFLAGS) 			\
+-	-export-dynamic 				\
+ 	-export-symbols-regex "^ethos.*" 		\
++	-no-undefined					\
+ 	-rpath $(libdir) 				\
+ 	$(NULL)
+ 
+ libethos_ui_@ETHOS_API_VERSION@_la_LIBADD =		\
+ 	$(ETHOS_LIBS)					\
+ 	$(ETHOS_UI_LIBS)				\
+-	$(builddir)/libethos-@ETHOS_API_VERSION@.la	\
++	libethos-@ETHOS_API_VERSION@.la	\
+ 	$(NULL)
+ 
+--- origsrc/ETHOS_0_2_2/plugin-loaders/c/Makefile.am	2009-11-19 16:19:49.000000000 -0600
++++ src/ETHOS_0_2_2/plugin-loaders/c/Makefile.am	2010-01-25 19:36:29.660641700 -0600
+@@ -19,5 +19,7 @@ libcloader_la_SOURCES =			\
+ 	ethos-c-plugin-loader.c		\
+ 	$(NULL)
+ 
++libcloader_la_LDFLAGS = -module -avoid-version -no-undefined
++
+ libcloader_la_LIBADD = $(ETHOS_LIBS) $(top_builddir)/ethos/libethos-1.0.la
+ EXTRA_DIST = $(NOINST_H_FILES)
+--- origsrc/ETHOS_0_2_2/plugin-loaders/js/Makefile.am	2009-11-19 16:19:49.000000000 -0600
++++ src/ETHOS_0_2_2/plugin-loaders/js/Makefile.am	2010-01-25 19:36:29.664642000 -0600
+@@ -22,6 +22,8 @@ libjsloader_la_SOURCES =			\
+ 	ethos-js-plugin-loader.c		\
+ 	$(NULL)
+ 
++libjsloader_la_LDFLAGS = -module -avoid-version -no-undefined
++
+ libjsloader_la_LIBADD =				\
+ 	$(top_builddir)/ethos/libethos-1.0.la	\
+ 	$(ETHOS_LIBS)				\
+--- origsrc/ETHOS_0_2_2/plugin-loaders/mono/Makefile.am	2009-11-19 16:19:49.000000000 -0600
++++ src/ETHOS_0_2_2/plugin-loaders/mono/Makefile.am	2010-01-25 19:36:29.668642200 -0600
+@@ -23,6 +23,8 @@ libmonoloader_la_SOURCES =			\
+ 	ethos-mono-plugin-loader.c		\
+ 	$(NULL)
+ 
++libmonoloader_la_LDFLAGS = -module -avoid-version -no-undefined
++
+ libmonoloader_la_LIBADD =			\
+ 	$(ETHOS_LIBS)				\
+ 	$(MONO_LIBS)				\
+--- origsrc/ETHOS_0_2_2/plugin-loaders/python/Makefile.am	2009-11-19 16:19:49.000000000 -0600
++++ src/ETHOS_0_2_2/plugin-loaders/python/Makefile.am	2010-01-25 19:36:29.673642500 -0600
+@@ -23,6 +23,8 @@ libpythonloader_la_SOURCES =			\
+ 	ethos-python-plugin-loader.c		\
+ 	$(NULL)
+ 
++libpythonloader_la_LDFLAGS = -module -avoid-version -no-undefined
++
+ libpythonloader_la_LIBADD =			\
+ 	$(ETHOS_LIBS)				\
+ 	$(PYTHON_LIBS)				\
